@@ -30,6 +30,7 @@ export function InventoryPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formValues, setFormValues] = useState<ProductFormValues>(initialFormValues)
   const [formErrors, setFormErrors] = useState<ProductFormErrors>({})
@@ -73,19 +74,39 @@ export function InventoryPage() {
     })
   }, [products, searchTerm])
 
-  function handleOpenForm() {
-    setFormValues(initialFormValues)
-    setFormErrors({})
-    setSuccessMessage(null)
-    setErrorMessage(null)
-    setIsFormOpen(true)
-  }
+function handleOpenCreateForm() {
+  setEditingProduct(null)
+  setFormValues(initialFormValues)
+  setFormErrors({})
+  setSuccessMessage(null)
+  setErrorMessage(null)
+  setIsFormOpen(true)
+}
 
-  function handleCloseForm() {
-    setIsFormOpen(false)
-    setFormValues(initialFormValues)
-    setFormErrors({})
-  }
+function handleOpenEditForm(product: Product) {
+  setEditingProduct(product)
+  setFormValues({
+    name: product.name,
+    description: product.description ?? '',
+    ageRestriction:
+      product.ageRestriction !== null && product.ageRestriction !== undefined
+        ? product.ageRestriction.toString()
+        : '',
+    company: product.company,
+    price: product.price.toString(),
+    image: null,
+  })
+  setFormErrors({})
+  setSuccessMessage(null)
+  setErrorMessage(null)
+  setIsFormOpen(true)
+}
+function handleCloseForm() {
+  setIsFormOpen(false)
+  setEditingProduct(null)
+  setFormValues(initialFormValues)
+  setFormErrors({})
+}
 
   function handleFormChange(
     field: keyof ProductFormValues,
@@ -102,44 +123,57 @@ export function InventoryPage() {
     }))
   }
 
-  async function handleCreateProduct() {
-    const errors = validateProductForm(formValues)
+async function handleSubmitProduct() {
+  const errors = validateProductForm(formValues)
 
-    setFormErrors(errors)
+  setFormErrors(errors)
 
-    if (hasProductFormErrors(errors)) {
-      return
+  if (hasProductFormErrors(errors)) {
+    return
+  }
+
+  try {
+    setIsSubmitting(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+
+    const productPayload = {
+      name: formValues.name.trim(),
+      description: formValues.description.trim() || null,
+      ageRestriction: formValues.ageRestriction
+        ? Number(formValues.ageRestriction)
+        : null,
+      company: formValues.company.trim(),
+      price: Number(formValues.price),
+      imageUrl: editingProduct?.imageUrl ?? null,
     }
 
-    try {
-      setIsSubmitting(true)
-      setErrorMessage(null)
-      setSuccessMessage(null)
+    if (editingProduct) {
+      await productApi.update(editingProduct.id, productPayload)
 
-      const createdProduct = await productApi.create({
-        name: formValues.name.trim(),
-        description: formValues.description.trim() || null,
-        ageRestriction: formValues.ageRestriction
-          ? Number(formValues.ageRestriction)
-          : null,
-        company: formValues.company.trim(),
-        price: Number(formValues.price),
-        imageUrl: null,
-      })
+      if (formValues.image) {
+        await productApi.uploadImage(editingProduct.id, formValues.image)
+      }
+
+      setSuccessMessage('Producto actualizado correctamente.')
+    } else {
+      const createdProduct = await productApi.create(productPayload)
 
       if (formValues.image) {
         await productApi.uploadImage(createdProduct.id, formValues.image)
       }
 
       setSuccessMessage('Producto creado correctamente.')
-      handleCloseForm()
-      await loadProducts()
-    } catch {
-      setErrorMessage('No fue posible guardar el producto. Intenta nuevamente.')
-    } finally {
-      setIsSubmitting(false)
     }
+
+    handleCloseForm()
+    await loadProducts()
+  } catch {
+    setErrorMessage('No fue posible guardar el producto. Intenta nuevamente.')
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   return (
     <AppLayout
@@ -164,7 +198,7 @@ export function InventoryPage() {
             </p>
           </div>
 
-          <Button onClick={handleOpenForm}>
+          <Button onClick={handleOpenCreateForm}>
             <Plus size={20} />
             Agregar producto
           </Button>
@@ -173,14 +207,20 @@ export function InventoryPage() {
         <Modal
           isOpen={isFormOpen}
           onClose={handleCloseForm}
-          title="Agregar producto"
+          title={editingProduct ? 'Editar producto' : 'Agregar producto'}
         >
           <ProductForm
             values={formValues}
             errors={formErrors}
             isSubmitting={isSubmitting}
+            submitLabel={editingProduct ? 'Actualizar producto' : 'Guardar producto'}
+            description={
+              editingProduct
+                ? 'Actualiza la información del juguete seleccionado.'
+                : 'Captura la información del juguete que deseas registrar.'
+            }
             onChange={handleFormChange}
-            onSubmit={handleCreateProduct}
+            onSubmit={handleSubmitProduct}
             onCancel={handleCloseForm}
           />
         </Modal>
@@ -246,6 +286,7 @@ export function InventoryPage() {
               <ProductGrid
                 products={filteredProducts}
                 apiBaseUrl={apiBaseUrl}
+                onEdit={handleOpenEditForm}
               />
             )}
           </div>

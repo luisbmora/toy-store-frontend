@@ -5,9 +5,10 @@ import { ProductCard } from './ProductCard'
 interface ProductGridProps {
   products: Product[]
   apiBaseUrl: string
+  onEdit: (product: Product) => void
 }
 
-export function ProductGrid({ products, apiBaseUrl }: ProductGridProps) {
+export function ProductGrid({ products, apiBaseUrl, onEdit }: ProductGridProps) {
   if (products.length === 0) {
     return (
       <div className="flex min-h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
@@ -33,6 +34,7 @@ export function ProductGrid({ products, apiBaseUrl }: ProductGridProps) {
           key={product.id}
           product={product}
           apiBaseUrl={apiBaseUrl}
+          onEdit={onEdit}
         />
       ))}
     </div>

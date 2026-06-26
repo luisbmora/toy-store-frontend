@@ -5,9 +5,10 @@ import { Button } from '../ui/Button'
 interface ProductCardProps {
   product: Product
   apiBaseUrl: string
+  onEdit: (product: Product) => void
 }
 
-export function ProductCard({ product, apiBaseUrl }: ProductCardProps) {
+export function ProductCard({ product, apiBaseUrl, onEdit }: ProductCardProps) {
   const imageSource = product.imageUrl
     ? `${apiBaseUrl}${product.imageUrl}`
     : null
@@ -75,7 +76,11 @@ export function ProductCard({ product, apiBaseUrl }: ProductCardProps) {
         </div>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <Button variant="ghost" className="px-3">
+          <Button
+            variant="ghost"
+            className="px-3"
+            onClick={() => onEdit(product)}
+          >
             <Edit size={17} />
             Editar
           </Button>

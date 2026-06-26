@@ -11,6 +11,8 @@ interface ProductFormProps {
   values: ProductFormValues
   errors: ProductFormErrors
   isSubmitting: boolean
+  submitLabel?: string
+  description?: string
   onChange: (field: keyof ProductFormValues, value: string | File | null) => void
   onSubmit: () => void
   onCancel: () => void
@@ -20,6 +22,8 @@ export function ProductForm({
   values,
   errors,
   isSubmitting,
+  submitLabel = 'Guardar producto',
+  description = 'Captura la información del juguete que deseas registrar.',
   onChange,
   onSubmit,
   onCancel,
@@ -32,7 +36,7 @@ export function ProductForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <p className="text-sm text-slate-500">
-        Captura la información del juguete que deseas registrar.
+        {description}
       </p>
 
       <div className="grid gap-5 md:grid-cols-2">
@@ -147,7 +151,7 @@ export function ProductForm({
           disabled={isSubmitting}
         >
           <Save size={18} />
-          {isSubmitting ? 'Guardando...' : 'Guardar producto'}
+          {isSubmitting ? 'Guardando...' : submitLabel}
         </Button>
       </div>
     </form>
