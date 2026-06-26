@@ -43,3 +43,11 @@ export interface ActivityNotification {
   message: string
   createdAt: string
 }
+
+export type ToastType = 'success' | 'error'
+
+export interface ToastMessage {
+  id: number
+  type: ToastType
+  message: string
+}

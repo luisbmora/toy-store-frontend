@@ -7,12 +7,15 @@ import { ProductStats } from '../components/products/ProductStats'
 import { Button } from '../components/ui/Button'
 import { productApi } from '../api/productApi'
 import { Modal } from '../components/ui/Modal'
+import { Toast } from '../components/ui/Toast'
 import { DeleteProductModal } from '../components/products/DeleteProductModal'
 import type {
   ActivityNotification,
   ActivityNotificationType,
   Product,
   ProductFormValues,
+  ToastMessage,
+  ToastType,
 } from '../types/product'
 import {
   hasProductFormErrors,
@@ -53,12 +56,20 @@ export function InventoryPage() {
   const [formValues, setFormValues] = useState<ProductFormValues>(initialFormValues)
   const [formErrors, setFormErrors] = useState<ProductFormErrors>({})
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [notifications, setNotifications] = useState<ActivityNotification[]>([])
+  const [toast, setToast] = useState<ToastMessage | null>(null)
   const [sortOption, setSortOption] = useState<SortOption>('none')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
 
-    function addActivityNotification(
+    
+    function showToast(type: ToastType, message: string) {
+    setToast({
+      id: Date.now(),
+      type,
+      message,
+    })
+  }
+  function addActivityNotification(
     type: ActivityNotificationType,
     productName: string,
   ) {
@@ -111,6 +122,20 @@ export function InventoryPage() {
     loadProducts()
   }, [])
 
+  useEffect(() => {
+  if (!toast) {
+    return
+  }
+
+  const timeoutId = window.setTimeout(() => {
+    setToast(null)
+  }, 3500)
+
+  return () => {
+    window.clearTimeout(timeoutId)
+  }
+}, [toast])
+
 const filteredProducts = useMemo(() => {
   const normalizedSearchTerm = searchTerm.trim().toLowerCase()
 
@@ -152,7 +177,6 @@ function handleOpenCreateForm() {
   setEditingProduct(null)
   setFormValues(initialFormValues)
   setFormErrors({})
-  setSuccessMessage(null)
   setErrorMessage(null)
   setIsFormOpen(true)
 }
@@ -171,7 +195,6 @@ function handleOpenEditForm(product: Product) {
     image: null,
   })
   setFormErrors({})
-  setSuccessMessage(null)
   setErrorMessage(null)
   setIsFormOpen(true)
 }
@@ -184,7 +207,6 @@ function handleCloseForm() {
 
 function handleOpenDeleteModal(product: Product) {
   setProductToDelete(product)
-  setSuccessMessage(null)
   setErrorMessage(null)
 }
 
@@ -225,7 +247,6 @@ async function handleSubmitProduct() {
   try {
     setIsSubmitting(true)
     setErrorMessage(null)
-    setSuccessMessage(null)
 
     const productPayload = {
       name: formValues.name.trim(),
@@ -245,8 +266,8 @@ async function handleSubmitProduct() {
         await productApi.uploadImage(editingProduct.id, formValues.image)
       }
 
-      addActivityNotification('updated', productPayload.name)
-      setSuccessMessage('Producto actualizado correctamente.')
+    addActivityNotification('updated', productPayload.name)
+    showToast('success', 'Producto actualizado correctamente.')
     } else {
       const createdProduct = await productApi.create(productPayload)
 
@@ -255,7 +276,7 @@ async function handleSubmitProduct() {
       }
 
       addActivityNotification('created', createdProduct.name)
-      setSuccessMessage('Producto creado correctamente.')
+      showToast('success', 'Producto creado correctamente.')
     }
 
     handleCloseForm()
@@ -275,16 +296,15 @@ async function handleDeleteProduct() {
   try {
     setIsDeleting(true)
     setErrorMessage(null)
-    setSuccessMessage(null)
 
   await productApi.delete(productToDelete.id)
 
   addActivityNotification('deleted', productToDelete.name)
-  setSuccessMessage('Producto eliminado correctamente.')
+  showToast('success', 'Producto eliminado correctamente.')
   handleCloseDeleteModal()
   await loadProducts()
   } catch {
-    setErrorMessage('No fue posible eliminar el producto. Intenta nuevamente.')
+    showToast('error', 'No fue posible guardar el producto. Intenta nuevamente.')
   } finally {
     setIsDeleting(false)
   }
@@ -299,12 +319,11 @@ async function handleDeleteProduct() {
         onSearchChange={setSearchTerm}
         onClearNotifications={handleClearNotifications}
       >
+      <Toast
+      toast={toast}
+      onClose={() => setToast(null)}
+      />
       <section className="mx-auto max-w-7xl">
-        {successMessage ? (
-          <div className="mb-5 rounded-3xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-blue-600">
-            {successMessage}
-          </div>
-        ) : null}
 
           <div className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm sm:p-6 md:flex-row md:items-center md:justify-between">          <div>
             <h1 className="text-2xl font-bold text-slate-900">

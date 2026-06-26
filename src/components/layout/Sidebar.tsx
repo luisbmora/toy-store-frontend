@@ -105,15 +105,6 @@ function SidebarContent({ onCloseMobile }: { onCloseMobile?: () => void }) {
           )
         })}
       </nav>
-
-      <div className="mt-6 rounded-3xl bg-slate-50 p-4">
-        <p className="text-sm font-semibold text-slate-900">
-          Prueba técnica
-        </p>
-        <p className="mt-1 text-sm text-slate-500">
-          Frontend conectado a Toy Store API.
-        </p>
-      </div>
     </>
   )
 }
