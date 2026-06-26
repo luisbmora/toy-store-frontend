@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import type { ActivityNotification } from '../../types/product'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
 
@@ -6,7 +7,9 @@ interface AppLayoutProps {
   title: string
   subtitle: string
   searchTerm?: string
+  notifications?: ActivityNotification[]
   onSearchChange?: (value: string) => void
+  onClearNotifications?: () => void
   children: ReactNode
 }
 
@@ -14,7 +17,9 @@ export function AppLayout({
   title,
   subtitle,
   searchTerm,
+  notifications,
   onSearchChange,
+  onClearNotifications,
   children,
 }: AppLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -32,7 +37,9 @@ export function AppLayout({
             title={title}
             subtitle={subtitle}
             searchTerm={searchTerm}
+            notifications={notifications}
             onSearchChange={onSearchChange}
+            onClearNotifications={onClearNotifications}
             onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           />
 

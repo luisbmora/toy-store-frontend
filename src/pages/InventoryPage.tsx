@@ -8,7 +8,12 @@ import { Button } from '../components/ui/Button'
 import { productApi } from '../api/productApi'
 import { Modal } from '../components/ui/Modal'
 import { DeleteProductModal } from '../components/products/DeleteProductModal'
-import type { Product, ProductFormValues } from '../types/product'
+import type {
+  ActivityNotification,
+  ActivityNotificationType,
+  Product,
+  ProductFormValues,
+} from '../types/product'
 import {
   hasProductFormErrors,
   validateProductForm,
@@ -49,9 +54,42 @@ export function InventoryPage() {
   const [formErrors, setFormErrors] = useState<ProductFormErrors>({})
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [notifications, setNotifications] = useState<ActivityNotification[]>([])
   const [sortOption, setSortOption] = useState<SortOption>('none')
   const [isFilterOpen, setIsFilterOpen] = useState(false)
 
+    function addActivityNotification(
+    type: ActivityNotificationType,
+    productName: string,
+  ) {
+    const actionMessages: Record<ActivityNotificationType, string> = {
+      created: `Se dio de alta el producto "${productName}".`,
+      updated: `Se actualizó el producto "${productName}".`,
+      deleted: `Se eliminó el producto "${productName}".`,
+    }
+
+    const now = new Date()
+
+    const notification: ActivityNotification = {
+      id: now.getTime(),
+      type,
+      message: actionMessages[type],
+      createdAt: now.toLocaleTimeString('es-MX', {
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+    }
+
+    setNotifications((currentNotifications) => [
+      notification,
+      ...currentNotifications,
+    ])
+  }
+
+  function handleClearNotifications() {
+    setNotifications([])
+  }
+  
   async function loadProducts() {
     try {
       setIsLoading(true)
@@ -207,6 +245,7 @@ async function handleSubmitProduct() {
         await productApi.uploadImage(editingProduct.id, formValues.image)
       }
 
+      addActivityNotification('updated', productPayload.name)
       setSuccessMessage('Producto actualizado correctamente.')
     } else {
       const createdProduct = await productApi.create(productPayload)
@@ -215,6 +254,7 @@ async function handleSubmitProduct() {
         await productApi.uploadImage(createdProduct.id, formValues.image)
       }
 
+      addActivityNotification('created', createdProduct.name)
       setSuccessMessage('Producto creado correctamente.')
     }
 
@@ -237,11 +277,12 @@ async function handleDeleteProduct() {
     setErrorMessage(null)
     setSuccessMessage(null)
 
-    await productApi.delete(productToDelete.id)
+  await productApi.delete(productToDelete.id)
 
-    setSuccessMessage('Producto eliminado correctamente.')
-    handleCloseDeleteModal()
-    await loadProducts()
+  addActivityNotification('deleted', productToDelete.name)
+  setSuccessMessage('Producto eliminado correctamente.')
+  handleCloseDeleteModal()
+  await loadProducts()
   } catch {
     setErrorMessage('No fue posible eliminar el producto. Intenta nuevamente.')
   } finally {
@@ -250,12 +291,14 @@ async function handleDeleteProduct() {
 }
 
   return (
-    <AppLayout
-      title="Inventario de juguetes"
-      subtitle="Administra productos, precios, compañías e imágenes desde un solo lugar."
-      searchTerm={searchTerm}
-      onSearchChange={setSearchTerm}
-    >
+      <AppLayout
+        title="Inventario de juguetes"
+        subtitle="Productos disponibles en la tienda"
+        searchTerm={searchTerm}
+        notifications={notifications}
+        onSearchChange={setSearchTerm}
+        onClearNotifications={handleClearNotifications}
+      >
       <section className="mx-auto max-w-7xl">
         {successMessage ? (
           <div className="mb-5 rounded-3xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-blue-600">

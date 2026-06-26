@@ -34,3 +34,12 @@ export interface ProductFormValues {
   price: string
   image: File | null
 }
+
+export type ActivityNotificationType = 'created' | 'updated' | 'deleted'
+
+export interface ActivityNotification {
+  id: number
+  type: ActivityNotificationType
+  message: string
+  createdAt: string
+}
