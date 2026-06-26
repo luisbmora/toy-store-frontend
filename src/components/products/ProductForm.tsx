@@ -1,5 +1,5 @@
-import { Save } from 'lucide-react'
-import type { FormEvent } from 'react'
+import { ImagePlus, Save, X } from 'lucide-react'
+import { useEffect, useState, type FormEvent } from 'react'
 import type { ProductFormValues } from '../../types/product'
 import type { ProductFormErrors } from '../../utils/productValidation'
 import { Button } from '../ui/Button'
@@ -13,6 +13,8 @@ interface ProductFormProps {
   isSubmitting: boolean
   submitLabel?: string
   description?: string
+  currentImageUrl?: string | null
+  apiBaseUrl?: string
   onChange: (field: keyof ProductFormValues, value: string | File | null) => void
   onSubmit: () => void
   onCancel: () => void
@@ -24,14 +26,44 @@ export function ProductForm({
   isSubmitting,
   submitLabel = 'Guardar producto',
   description = 'Captura la información del juguete que deseas registrar.',
+  currentImageUrl,
+  apiBaseUrl = '',
   onChange,
   onSubmit,
   onCancel,
 }: ProductFormProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!values.image) {
+      setPreviewUrl(null)
+      return
+    }
+
+    const objectUrl = URL.createObjectURL(values.image)
+    setPreviewUrl(objectUrl)
+
+    return () => {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }, [values.image])
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     onSubmit()
   }
+
+  function handleRemoveSelectedImage() {
+    onChange('image', null)
+
+    const fileInput = document.getElementById('image') as HTMLInputElement | null
+
+    if (fileInput) {
+      fileInput.value = ''
+    }
+  }
+
+  const currentImageSource = currentImageUrl ? `${apiBaseUrl}${currentImageUrl}` : null
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -121,21 +153,73 @@ export function ProductForm({
         />
       </FormField>
 
-      <FormField
-        label="Imagen"
-        htmlFor="image"
-        error={errors.image}
-        helperText="Opcional. Formatos permitidos: JPG, PNG o WEBP."
-      >
-        <Input
-          id="image"
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          onChange={(event) => onChange('image', event.target.files?.[0] ?? null)}
-          hasError={Boolean(errors.image)}
-          className="pt-3"
-        />
-      </FormField>
+      <div className="grid gap-5 md:grid-cols-[220px_1fr]">
+        <div>
+          <p className="mb-2 block text-sm font-semibold text-slate-700">
+            Vista previa
+          </p>
+
+          <div className="flex h-44 items-center justify-center overflow-hidden rounded-3xl border border-dashed border-slate-300 bg-slate-50">
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt="Vista previa de imagen seleccionada"
+                className="h-full w-full object-cover"
+              />
+            ) : currentImageSource ? (
+              <img
+                src={currentImageSource}
+                alt="Imagen actual del producto"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex flex-col items-center text-slate-400">
+                <ImagePlus size={38} />
+                <span className="mt-2 text-sm font-medium">
+                  Sin imagen
+                </span>
+              </div>
+            )}
+          </div>
+
+          {currentImageSource && !previewUrl ? (
+            <p className="mt-2 text-xs text-slate-400">
+              Esta es la imagen actual del producto.
+            </p>
+          ) : null}
+
+          {previewUrl ? (
+            <button
+              type="button"
+              onClick={handleRemoveSelectedImage}
+              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-200"
+            >
+              <X size={14} />
+              Quitar imagen seleccionada
+            </button>
+          ) : null}
+        </div>
+
+        <FormField
+          label="Imagen"
+          htmlFor="image"
+          error={errors.image}
+          helperText="Opcional. Formatos permitidos: JPG, PNG o WEBP."
+        >
+          <Input
+            id="image"
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            onChange={(event) => onChange('image', event.target.files?.[0] ?? null)}
+            hasError={Boolean(errors.image)}
+            className="pt-3"
+          />
+
+          <div className="mt-4 rounded-2xl bg-blue-50 p-4 text-sm text-blue-700">
+            Al seleccionar una imagen podrás verla antes de guardar. Si estás editando un producto, la nueva imagen reemplazará visualmente a la anterior después de guardar.
+          </div>
+        </FormField>
+      </div>
 
       <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
         <Button

@@ -244,20 +244,22 @@ async function handleDeleteProduct() {
           onClose={handleCloseForm}
           title={editingProduct ? 'Editar producto' : 'Agregar producto'}
         >
-          <ProductForm
-            values={formValues}
-            errors={formErrors}
-            isSubmitting={isSubmitting}
-            submitLabel={editingProduct ? 'Actualizar producto' : 'Guardar producto'}
-            description={
-              editingProduct
-                ? 'Actualiza la información del juguete seleccionado.'
-                : 'Captura la información del juguete que deseas registrar.'
-            }
-            onChange={handleFormChange}
-            onSubmit={handleSubmitProduct}
-            onCancel={handleCloseForm}
-          />
+        <ProductForm
+          values={formValues}
+          errors={formErrors}
+          isSubmitting={isSubmitting}
+          submitLabel={editingProduct ? 'Actualizar producto' : 'Guardar producto'}
+          description={
+            editingProduct
+              ? 'Actualiza la información del juguete seleccionado.'
+              : 'Captura la información del juguete que deseas registrar.'
+          }
+          currentImageUrl={editingProduct?.imageUrl}
+          apiBaseUrl={apiBaseUrl}
+          onChange={handleFormChange}
+          onSubmit={handleSubmitProduct}
+          onCancel={handleCloseForm}
+        />
         </Modal>
 
         <DeleteProductModal
