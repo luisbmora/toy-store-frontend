@@ -1,35 +1,57 @@
-import { Package, Plus, ShieldAlert, ImageOff, DollarSign } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { Plus, RefreshCw } from 'lucide-react'
 import { AppLayout } from '../components/layout/Applayout'
+import { ProductGrid } from '../components/products/ProductGrid'
+import { ProductStats } from '../components/products/ProductStats'
 import { Button } from '../components/ui/Button'
+import { productApi } from '../api/productApi'
+import type { Product } from '../types/product'
 
-const stats = [
-  {
-    label: 'Productos registrados',
-    value: '0',
-    icon: Package,
-    color: 'bg-blue-100 text-blue-500',
-  },
-  {
-    label: 'Precio promedio',
-    value: '$0.00',
-    icon: DollarSign,
-    color: 'bg-yellow-100 text-yellow-500',
-  },
-  {
-    label: 'Con restricción de edad',
-    value: '0',
-    icon: ShieldAlert,
-    color: 'bg-red-100 text-red-500',
-  },
-  {
-    label: 'Sin imagen',
-    value: '0',
-    icon: ImageOff,
-    color: 'bg-slate-100 text-slate-500',
-  },
-]
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 
 export function InventoryPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  async function loadProducts() {
+    try {
+      setIsLoading(true)
+      setErrorMessage(null)
+
+      const data = await productApi.getAll()
+
+      setProducts(data)
+    } catch {
+      setErrorMessage(
+        'No fue posible cargar los productos. Verifica que la API esté encendida y que la URL sea correcta.',
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadProducts()
+  }, [])
+
+  const filteredProducts = useMemo(() => {
+    const normalizedSearchTerm = searchTerm.trim().toLowerCase()
+
+    if (!normalizedSearchTerm) {
+      return products
+    }
+
+    return products.filter((product) => {
+      return (
+        product.name.toLowerCase().includes(normalizedSearchTerm) ||
+        product.company.toLowerCase().includes(normalizedSearchTerm) ||
+        product.description?.toLowerCase().includes(normalizedSearchTerm)
+      )
+    })
+  }, [products, searchTerm])
+
   return (
     <AppLayout
       title="Inventario de juguetes"
@@ -53,46 +75,69 @@ export function InventoryPage() {
           </Button>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {stats.map((stat) => {
-            const Icon = stat.icon
-
-            return (
-              <article
-                key={stat.label}
-                className="rounded-3xl bg-white p-5 shadow-sm"
-              >
-                <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${stat.color}`}>
-                  <Icon size={23} />
-                </div>
-
-                <p className="mt-4 text-sm font-medium text-slate-500">
-                  {stat.label}
-                </p>
-
-                <h2 className="mt-1 text-3xl font-bold text-slate-900">
-                  {stat.value}
-                </h2>
-              </article>
-            )
-          })}
+        <div className="mt-6">
+          <ProductStats products={products} />
         </div>
 
         <section className="mt-6 rounded-3xl bg-white p-6 shadow-sm">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-900">
                 Productos
               </h2>
 
               <p className="mt-1 text-slate-500">
-                En la siguiente sección conectaremos esta vista con la API del backend.
+                Productos cargados desde Toy Store API.
               </p>
             </div>
 
-            <span className="rounded-full bg-yellow-100 px-4 py-2 text-sm font-semibold text-yellow-700">
-              Pendiente de conexión API
-            </span>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Buscar por nombre, compañía o descripción..."
+                className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 sm:w-80"
+              />
+
+              <Button
+                variant="ghost"
+                onClick={loadProducts}
+                disabled={isLoading}
+              >
+                <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+                Recargar
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            {isLoading ? (
+              <div className="flex min-h-72 items-center justify-center rounded-3xl bg-slate-50">
+                <div className="text-center">
+                  <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-blue-500" />
+
+                  <p className="mt-4 font-medium text-slate-500">
+                    Cargando productos...
+                  </p>
+                </div>
+              </div>
+            ) : errorMessage ? (
+              <div className="rounded-3xl border border-red-100 bg-red-50 p-6 text-red-600">
+                <p className="font-semibold">
+                  Ocurrió un problema
+                </p>
+
+                <p className="mt-1 text-sm">
+                  {errorMessage}
+                </p>
+              </div>
+            ) : (
+              <ProductGrid
+                products={filteredProducts}
+                apiBaseUrl={apiBaseUrl}
+              />
+            )}
           </div>
         </section>
       </section>
