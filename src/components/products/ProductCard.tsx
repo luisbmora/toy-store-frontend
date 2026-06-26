@@ -6,9 +6,15 @@ interface ProductCardProps {
   product: Product
   apiBaseUrl: string
   onEdit: (product: Product) => void
+  onDelete: (product: Product) => void
 }
 
-export function ProductCard({ product, apiBaseUrl, onEdit }: ProductCardProps) {
+export function ProductCard({
+  product,
+  apiBaseUrl,
+  onEdit,
+  onDelete,
+}: ProductCardProps) {
   const imageSource = product.imageUrl
     ? `${apiBaseUrl}${product.imageUrl}`
     : null
@@ -85,7 +91,11 @@ export function ProductCard({ product, apiBaseUrl, onEdit }: ProductCardProps) {
             Editar
           </Button>
 
-          <Button variant="danger" className="px-3">
+          <Button
+            variant="danger"
+            className="px-3"
+            onClick={() => onDelete(product)}
+          >
             <Trash2 size={17} />
             Eliminar
           </Button>

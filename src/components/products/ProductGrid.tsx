@@ -6,9 +6,15 @@ interface ProductGridProps {
   products: Product[]
   apiBaseUrl: string
   onEdit: (product: Product) => void
+  onDelete: (product: Product) => void
 }
 
-export function ProductGrid({ products, apiBaseUrl, onEdit }: ProductGridProps) {
+export function ProductGrid({
+  products,
+  apiBaseUrl,
+  onEdit,
+  onDelete,
+}: ProductGridProps) {
   if (products.length === 0) {
     return (
       <div className="flex min-h-72 flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
@@ -35,6 +41,7 @@ export function ProductGrid({ products, apiBaseUrl, onEdit }: ProductGridProps) 
           product={product}
           apiBaseUrl={apiBaseUrl}
           onEdit={onEdit}
+          onDelete={onDelete}
         />
       ))}
     </div>

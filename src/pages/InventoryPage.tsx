@@ -7,6 +7,7 @@ import { ProductStats } from '../components/products/ProductStats'
 import { Button } from '../components/ui/Button'
 import { productApi } from '../api/productApi'
 import { Modal } from '../components/ui/Modal'
+import { DeleteProductModal } from '../components/products/DeleteProductModal'
 import type { Product, ProductFormValues } from '../types/product'
 import {
   hasProductFormErrors,
@@ -31,6 +32,8 @@ export function InventoryPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isFormOpen, setIsFormOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formValues, setFormValues] = useState<ProductFormValues>(initialFormValues)
   const [formErrors, setFormErrors] = useState<ProductFormErrors>({})
@@ -108,6 +111,16 @@ function handleCloseForm() {
   setFormErrors({})
 }
 
+function handleOpenDeleteModal(product: Product) {
+  setProductToDelete(product)
+  setSuccessMessage(null)
+  setErrorMessage(null)
+}
+
+function handleCloseDeleteModal() {
+  setProductToDelete(null)
+}
+
   function handleFormChange(
     field: keyof ProductFormValues,
     value: string | File | null,
@@ -175,6 +188,28 @@ async function handleSubmitProduct() {
   }
 }
 
+async function handleDeleteProduct() {
+  if (!productToDelete) {
+    return
+  }
+
+  try {
+    setIsDeleting(true)
+    setErrorMessage(null)
+    setSuccessMessage(null)
+
+    await productApi.delete(productToDelete.id)
+
+    setSuccessMessage('Producto eliminado correctamente.')
+    handleCloseDeleteModal()
+    await loadProducts()
+  } catch {
+    setErrorMessage('No fue posible eliminar el producto. Intenta nuevamente.')
+  } finally {
+    setIsDeleting(false)
+  }
+}
+
   return (
     <AppLayout
       title="Inventario de juguetes"
@@ -224,6 +259,14 @@ async function handleSubmitProduct() {
             onCancel={handleCloseForm}
           />
         </Modal>
+
+        <DeleteProductModal
+          isOpen={Boolean(productToDelete)}
+          product={productToDelete}
+          isDeleting={isDeleting}
+          onClose={handleCloseDeleteModal}
+          onConfirm={handleDeleteProduct}
+        />
 
         <div className="mt-6">
           <ProductStats products={products} />
@@ -287,6 +330,7 @@ async function handleSubmitProduct() {
                 products={filteredProducts}
                 apiBaseUrl={apiBaseUrl}
                 onEdit={handleOpenEditForm}
+                onDelete={handleOpenDeleteModal}
               />
             )}
           </div>
