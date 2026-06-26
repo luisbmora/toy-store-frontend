@@ -1,5 +1,6 @@
 import { Package, Plus, ShieldAlert, ImageOff, DollarSign } from 'lucide-react'
 import { AppLayout } from '../components/layout/Applayout'
+import { Button } from '../components/ui/Button'
 
 const stats = [
   {
@@ -46,10 +47,10 @@ export function InventoryPage() {
             </p>
           </div>
 
-          <button className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white shadow-md transition hover:bg-blue-600">
+          <Button>
             <Plus size={20} />
             Agregar producto
-          </button>
+          </Button>
         </div>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
