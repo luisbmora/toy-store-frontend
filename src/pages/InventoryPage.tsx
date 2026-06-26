@@ -222,8 +222,7 @@ async function handleDeleteProduct() {
           </div>
         ) : null}
 
-        <div className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
-          <div>
+          <div className="flex flex-col gap-4 rounded-3xl bg-white p-5 shadow-sm sm:p-6 md:flex-row md:items-center md:justify-between">          <div>
             <h1 className="text-2xl font-bold text-slate-900">
               Catálogo de productos
             </h1>
@@ -233,7 +232,7 @@ async function handleDeleteProduct() {
             </p>
           </div>
 
-          <Button onClick={handleOpenCreateForm}>
+          <Button onClick={handleOpenCreateForm} className="w-full sm:w-auto">
             <Plus size={20} />
             Agregar producto
           </Button>
@@ -274,7 +273,7 @@ async function handleDeleteProduct() {
           <ProductStats products={products} />
         </div>
 
-        <section className="mt-6 rounded-3xl bg-white p-6 shadow-sm">
+        <section className="mt-6 rounded-3xl bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-900">

@@ -3,15 +3,16 @@ import { Bell, Menu, Search } from 'lucide-react'
 interface HeaderProps {
   title: string
   subtitle: string
+  onOpenMobileMenu: () => void
 }
 
-export function Header({ title, subtitle }: HeaderProps) {
+export function Header({ title, subtitle, onOpenMobileMenu }: HeaderProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50/90 px-4 py-4 backdrop-blur md:px-8">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-blue-500">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-500 sm:text-sm">
               Toy Store
             </p>
 
@@ -19,14 +20,15 @@ export function Header({ title, subtitle }: HeaderProps) {
               {title}
             </h2>
 
-            <p className="mt-1 text-sm text-slate-500 md:text-base">
+            <p className="mt-1 max-w-2xl text-sm text-slate-500 md:text-base">
               {subtitle}
             </p>
           </div>
 
           <button
             type="button"
-            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm lg:hidden"
+            onClick={onOpenMobileMenu}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm lg:hidden"
             aria-label="Abrir menú"
           >
             <Menu size={22} />
@@ -49,7 +51,7 @@ export function Header({ title, subtitle }: HeaderProps) {
 
           <button
             type="button"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:text-blue-500"
+            className="hidden h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-600 shadow-sm transition hover:text-blue-500 sm:flex"
             aria-label="Notificaciones"
           >
             <Bell size={21} />

@@ -6,7 +6,13 @@ import {
   Package,
   Settings,
   ShoppingBag,
+  X,
 } from 'lucide-react'
+
+interface SidebarProps {
+  isMobileOpen: boolean
+  onCloseMobile: () => void
+}
 
 const menuItems = [
   {
@@ -46,22 +52,35 @@ const menuItems = [
   },
 ]
 
-export function Sidebar() {
+function SidebarContent({ onCloseMobile }: { onCloseMobile?: () => void }) {
   return (
-    <aside className="hidden min-h-screen w-72 flex-col border-r border-slate-200 bg-white px-5 py-6 lg:flex">
-      <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-md">
-          <Package size={24} />
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500 text-white shadow-md">
+            <Package size={24} />
+          </div>
+
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">
+              Toy Store
+            </h1>
+            <p className="text-sm text-slate-500">
+              Inventory System
+            </p>
+          </div>
         </div>
 
-        <div>
-          <h1 className="text-lg font-bold text-slate-900">
-            Toy Store
-          </h1>
-          <p className="text-sm text-slate-500">
-             Sistema de Inventarios
-          </p>
-        </div>
+        {onCloseMobile ? (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 lg:hidden"
+            aria-label="Cerrar menú"
+          >
+            <X size={20} />
+          </button>
+        ) : null}
       </div>
 
       <nav className="mt-10 flex flex-1 flex-col gap-2">
@@ -72,6 +91,7 @@ export function Sidebar() {
             <button
               key={item.label}
               type="button"
+              onClick={onCloseMobile}
               className={[
                 'flex items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-semibold transition',
                 item.isActive
@@ -86,7 +106,7 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="rounded-3xl bg-slate-50 p-4">
+      <div className="mt-6 rounded-3xl bg-slate-50 p-4">
         <p className="text-sm font-semibold text-slate-900">
           Prueba técnica
         </p>
@@ -94,6 +114,29 @@ export function Sidebar() {
           Frontend conectado a Toy Store API.
         </p>
       </div>
-    </aside>
+    </>
+  )
+}
+
+export function Sidebar({ isMobileOpen, onCloseMobile }: SidebarProps) {
+  return (
+    <>
+      <aside className="hidden min-h-screen w-72 flex-col border-r border-slate-200 bg-white px-5 py-6 lg:flex">
+        <SidebarContent />
+      </aside>
+
+      {isMobileOpen ? (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div
+            className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+            onClick={onCloseMobile}
+          />
+
+          <aside className="relative z-10 flex h-full w-[min(22rem,85vw)] flex-col bg-white px-5 py-6 shadow-2xl">
+            <SidebarContent onCloseMobile={onCloseMobile} />
+          </aside>
+        </div>
+      ) : null}
+    </>
   )
 }
