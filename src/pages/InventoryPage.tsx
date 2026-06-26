@@ -1,19 +1,40 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, RefreshCw } from 'lucide-react'
 import { AppLayout } from '../components/layout/Applayout'
+import { ProductForm } from '../components/products/ProductForm'
 import { ProductGrid } from '../components/products/ProductGrid'
 import { ProductStats } from '../components/products/ProductStats'
 import { Button } from '../components/ui/Button'
 import { productApi } from '../api/productApi'
-import type { Product } from '../types/product'
+import { Modal } from '../components/ui/Modal'
+import type { Product, ProductFormValues } from '../types/product'
+import {
+  hasProductFormErrors,
+  validateProductForm,
+  type ProductFormErrors,
+} from '../utils/productValidation'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+
+const initialFormValues: ProductFormValues = {
+  name: '',
+  description: '',
+  ageRestriction: '',
+  company: '',
+  price: '',
+  image: null,
+}
 
 export function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formValues, setFormValues] = useState<ProductFormValues>(initialFormValues)
+  const [formErrors, setFormErrors] = useState<ProductFormErrors>({})
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   async function loadProducts() {
     try {
@@ -52,12 +73,86 @@ export function InventoryPage() {
     })
   }, [products, searchTerm])
 
+  function handleOpenForm() {
+    setFormValues(initialFormValues)
+    setFormErrors({})
+    setSuccessMessage(null)
+    setErrorMessage(null)
+    setIsFormOpen(true)
+  }
+
+  function handleCloseForm() {
+    setIsFormOpen(false)
+    setFormValues(initialFormValues)
+    setFormErrors({})
+  }
+
+  function handleFormChange(
+    field: keyof ProductFormValues,
+    value: string | File | null,
+  ) {
+    setFormValues((currentValues) => ({
+      ...currentValues,
+      [field]: value,
+    }))
+
+    setFormErrors((currentErrors) => ({
+      ...currentErrors,
+      [field]: undefined,
+    }))
+  }
+
+  async function handleCreateProduct() {
+    const errors = validateProductForm(formValues)
+
+    setFormErrors(errors)
+
+    if (hasProductFormErrors(errors)) {
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      setErrorMessage(null)
+      setSuccessMessage(null)
+
+      const createdProduct = await productApi.create({
+        name: formValues.name.trim(),
+        description: formValues.description.trim() || null,
+        ageRestriction: formValues.ageRestriction
+          ? Number(formValues.ageRestriction)
+          : null,
+        company: formValues.company.trim(),
+        price: Number(formValues.price),
+        imageUrl: null,
+      })
+
+      if (formValues.image) {
+        await productApi.uploadImage(createdProduct.id, formValues.image)
+      }
+
+      setSuccessMessage('Producto creado correctamente.')
+      handleCloseForm()
+      await loadProducts()
+    } catch {
+      setErrorMessage('No fue posible guardar el producto. Intenta nuevamente.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <AppLayout
       title="Inventario de juguetes"
       subtitle="Administra productos, precios, compañías e imágenes desde un solo lugar."
     >
       <section className="mx-auto max-w-7xl">
+        {successMessage ? (
+          <div className="mb-5 rounded-3xl border border-blue-100 bg-blue-50 p-4 text-sm font-semibold text-blue-600">
+            {successMessage}
+          </div>
+        ) : null}
+
         <div className="flex flex-col gap-4 rounded-3xl bg-white p-6 shadow-sm md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
@@ -69,11 +164,26 @@ export function InventoryPage() {
             </p>
           </div>
 
-          <Button>
+          <Button onClick={handleOpenForm}>
             <Plus size={20} />
             Agregar producto
           </Button>
         </div>
+
+        <Modal
+          isOpen={isFormOpen}
+          onClose={handleCloseForm}
+          title="Agregar producto"
+        >
+          <ProductForm
+            values={formValues}
+            errors={formErrors}
+            isSubmitting={isSubmitting}
+            onChange={handleFormChange}
+            onSubmit={handleCreateProduct}
+            onCancel={handleCloseForm}
+          />
+        </Modal>
 
         <div className="mt-6">
           <ProductStats products={products} />
