@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Plus, RefreshCw } from 'lucide-react'
+import { Filter, Plus, RefreshCw, X } from 'lucide-react'
 import { AppLayout } from '../components/layout/Applayout'
 import { ProductForm } from '../components/products/ProductForm'
 import { ProductGrid } from '../components/products/ProductGrid'
@@ -16,6 +16,16 @@ import {
 } from '../utils/productValidation'
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+
+type SortOption = 'none' | 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc'
+
+const sortLabels: Record<SortOption, string> = {
+  none: 'Sin orden',
+  'name-asc': 'Nombre A-Z',
+  'name-desc': 'Nombre Z-A',
+  'price-asc': 'Precio menor a mayor',
+  'price-desc': 'Precio mayor a menor',
+}
 
 const initialFormValues: ProductFormValues = {
   name: '',
@@ -39,6 +49,8 @@ export function InventoryPage() {
   const [formErrors, setFormErrors] = useState<ProductFormErrors>({})
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [sortOption, setSortOption] = useState<SortOption>('none')
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
 
   async function loadProducts() {
     try {
@@ -61,21 +73,42 @@ export function InventoryPage() {
     loadProducts()
   }, [])
 
-  const filteredProducts = useMemo(() => {
-    const normalizedSearchTerm = searchTerm.trim().toLowerCase()
+const filteredProducts = useMemo(() => {
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
 
+  const searchedProducts = products.filter((product) => {
     if (!normalizedSearchTerm) {
-      return products
+      return true
     }
 
-    return products.filter((product) => {
-      return (
-        product.name.toLowerCase().includes(normalizedSearchTerm) ||
-        product.company.toLowerCase().includes(normalizedSearchTerm) ||
-        product.description?.toLowerCase().includes(normalizedSearchTerm)
-      )
-    })
-  }, [products, searchTerm])
+    return product.name.toLowerCase().includes(normalizedSearchTerm)
+  })
+
+  const sortedProducts = [...searchedProducts]
+
+  switch (sortOption) {
+    case 'name-asc':
+      sortedProducts.sort((a, b) => a.name.localeCompare(b.name))
+      break
+
+    case 'name-desc':
+      sortedProducts.sort((a, b) => b.name.localeCompare(a.name))
+      break
+
+    case 'price-asc':
+      sortedProducts.sort((a, b) => a.price - b.price)
+      break
+
+    case 'price-desc':
+      sortedProducts.sort((a, b) => b.price - a.price)
+      break
+
+    default:
+      break
+  }
+
+  return sortedProducts
+}, [products, searchTerm, sortOption])
 
 function handleOpenCreateForm() {
   setEditingProduct(null)
@@ -135,6 +168,12 @@ function handleCloseDeleteModal() {
       [field]: undefined,
     }))
   }
+
+  function handleClearFilters() {
+  setSearchTerm('')
+  setSortOption('none')
+  setIsFilterOpen(false)
+}
 
 async function handleSubmitProduct() {
   const errors = validateProductForm(formValues)
@@ -214,6 +253,8 @@ async function handleDeleteProduct() {
     <AppLayout
       title="Inventario de juguetes"
       subtitle="Administra productos, precios, compañías e imágenes desde un solo lugar."
+      searchTerm={searchTerm}
+      onSearchChange={setSearchTerm}
     >
       <section className="mx-auto max-w-7xl">
         {successMessage ? (
@@ -285,24 +326,105 @@ async function handleDeleteProduct() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                placeholder="Buscar por nombre, compañía o descripción..."
-                className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100 sm:w-80"
-              />
+          <div className="relative flex flex-col gap-3 sm:flex-row">
+            <Button
+              variant="ghost"
+              onClick={() => setIsFilterOpen((currentValue) => !currentValue)}
+            >
+              <Filter size={18} />
+              Filtros
+            </Button>
 
-              <Button
-                variant="ghost"
-                onClick={loadProducts}
-                disabled={isLoading}
-              >
-                <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
-                Recargar
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              onClick={loadProducts}
+              disabled={isLoading}
+            >
+              <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+              Recargar
+            </Button>
+
+            {isFilterOpen ? (
+              <div className="absolute right-0 top-28 z-30 w-full rounded-3xl border border-slate-100 bg-white p-4 shadow-xl sm:top-14 sm:w-80">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">
+                      Filtros y orden
+                    </p>
+
+                    <p className="mt-1 text-xs text-slate-500">
+                      Ordena los productos mostrados.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsFilterOpen(false)}
+                    className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                    aria-label="Cerrar filtros"
+                  >
+                    <X size={17} />
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {(Object.keys(sortLabels) as SortOption[]).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => {
+                        setSortOption(option)
+                        setIsFilterOpen(false)
+                      }}
+                      className={[
+                        'flex w-full items-center justify-between rounded-2xl px-4 py-3 text-left text-sm font-semibold transition',
+                        sortOption === option
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100',
+                      ].join(' ')}
+                    >
+                      {sortLabels[option]}
+
+                      {sortOption === option ? (
+                        <span className="text-xs">
+                          Activo
+                        </span>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="ghost"
+                  className="mt-4 w-full"
+                  onClick={handleClearFilters}
+                >
+                  Limpiar filtros
+                </Button>
+              </div>
+            ) : null}
+          </div>
+          </div>
+
+          <div className="mt-5 flex flex-col gap-2 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Mostrando{' '}
+              <strong className="text-slate-900">
+                {filteredProducts.length}
+              </strong>{' '}
+              de{' '}
+              <strong className="text-slate-900">
+                {products.length}
+              </strong>{' '}
+              productos
+            </span>
+
+            <span>
+              Orden actual:{' '}
+              <strong className="text-blue-500">
+                {sortLabels[sortOption]}
+              </strong>
+            </span>
           </div>
 
           <div className="mt-6">

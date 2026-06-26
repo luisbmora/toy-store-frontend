@@ -3,10 +3,18 @@ import { Bell, Menu, Search } from 'lucide-react'
 interface HeaderProps {
   title: string
   subtitle: string
+  searchTerm?: string
+  onSearchChange?: (value: string) => void
   onOpenMobileMenu: () => void
 }
 
-export function Header({ title, subtitle, onOpenMobileMenu }: HeaderProps) {
+export function Header({
+  title,
+  subtitle,
+  searchTerm = '',
+  onSearchChange,
+  onOpenMobileMenu,
+}: HeaderProps) {
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-slate-50/90 px-4 py-4 backdrop-blur md:px-8">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
@@ -44,7 +52,9 @@ export function Header({ title, subtitle, onOpenMobileMenu }: HeaderProps) {
 
             <input
               type="text"
-              placeholder="Buscar productos..."
+              value={searchTerm}
+              onChange={(event) => onSearchChange?.(event.target.value)}
+              placeholder="Buscar por nombre..."
               className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
             />
           </label>

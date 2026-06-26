@@ -5,10 +5,18 @@ import { Sidebar } from './Sidebar'
 interface AppLayoutProps {
   title: string
   subtitle: string
+  searchTerm?: string
+  onSearchChange?: (value: string) => void
   children: ReactNode
 }
 
-export function AppLayout({ title, subtitle, children }: AppLayoutProps) {
+export function AppLayout({
+  title,
+  subtitle,
+  searchTerm,
+  onSearchChange,
+  children,
+}: AppLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   return (
@@ -23,6 +31,8 @@ export function AppLayout({ title, subtitle, children }: AppLayoutProps) {
           <Header
             title={title}
             subtitle={subtitle}
+            searchTerm={searchTerm}
+            onSearchChange={onSearchChange}
             onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           />
 
